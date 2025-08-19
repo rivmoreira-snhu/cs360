@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/background"
+    android:padding="16dp"
+    android:fitsSystemWindows="true">
+
+    <TextView
+        android:id="@+id/calendarTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="My Events"
+        android:textSize="24sp"
+        android:textColor="@color/textPrimary"
+        android:textStyle="bold"
+        android:layout_gravity="center_horizontal"
+        android:paddingBottom="8dp" />
+
+    <!-- ️ Today’s Date -->
+    <TextView
+        android:id="@+id/currentDate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="June 9, 2025"
+        android:textColor="@color/textSecondary"
+        android:textSize="16sp"
+        android:layout_gravity="start" />
+
+    <!-- Section Header -->
+    <TextView
+        android:id="@+id/eventHeader"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Today’s Events"
+        android:textColor="@color/textPrimary"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:layout_gravity="start"
+        android:layout_marginBottom="8dp" />
+
+    <!-- Scrollable Event List -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true"
+        android:layout_marginBottom="16dp">
+
+        <LinearLayout
+            android:id="@+id/eventList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="8dp"
+            android:layout_gravity="bottom" />
+    </ScrollView>
+
+    <!-- Add Event Button -->
+    <Button
+        android:id="@+id/addEventButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Add New Event"
+        android:backgroundTint="@color/primary"
+        android:textColor="@color/background"
+        android:layout_marginTop="8dp" />
+</LinearLayout>

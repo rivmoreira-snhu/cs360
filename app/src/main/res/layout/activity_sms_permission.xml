@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/background"
+    android:padding="24dp">
+
+    <!-- This empty view creates vertical space at the top -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <TextView
+        android:id="@+id/permissionStatus"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="SMS Permission Status"
+        android:textColor="@color/textPrimary"
+        android:textSize="18sp"
+        android:gravity="center"
+        android:layout_marginBottom="16dp" />
+
+    <Button
+        android:id="@+id/requestPermissionButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Request SMS Permission"
+        android:textColor="@color/background"
+        android:backgroundTint="@color/primary"
+        android:layout_marginBottom="16dp" />
+
+    <Button
+        android:id="@+id/openSettingsButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Open App Settings"
+        android:textColor="@color/background"
+        android:backgroundTint="@color/accent"
+        android:layout_marginBottom="16dp" />
+
+    <Button
+        android:id="@+id/goBackButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Go Back"
+        android:textColor="@color/textPrimary"
+        android:backgroundTint="@color/secondary" />
+</LinearLayout>
