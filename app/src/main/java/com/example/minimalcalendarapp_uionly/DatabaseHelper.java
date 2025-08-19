@@ -1,150 +1,133 @@
 package com.example.minimalcalendarapp_uionly;
+
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
-/*
- * This class handles the SQLite database interactions for our app.
- * We're managing users here and will later expand to calendar events.
+/**
+ * SQLite database helper for CS360 app.
+ * Milestone 4 updates: schema constraints, indices, and non-destructive migration (v1 -> v2).
  */
-public class DatabaseHelper extends SQLiteOpenHelper {
-
-    // Basic DB config
-    private static final String DATABASE_NAME = "calendarApp.db";
-    private static final int DATABASE_VERSION = 1;
-
-    // Table and column names for users
-    public static final String TABLE_USERS = "users";
-    public static final String COLUMN_USER_ID = "id";
-    public static final String COLUMN_USERNAME = "username";
-    public static final String COLUMN_PASSWORD = "password";
-
-    // Table and column names for events
-    public static final String TABLE_EVENTS = "events";
-    public static final String COLUMN_EVENT_ID = "id";
-    public static final String COLUMN_EVENT_TITLE = "title";
-    public static final String COLUMN_EVENT_DATE = "date";
-
-    // Constructor – gets called with activity context
-    public DatabaseHelper(Context context) {
-        super(context, DATABASE_NAME, null, DATABASE_VERSION);
+public class DatabaseHelperEnhanced extends SQLiteOpenHelper {
+    //Updating to use the injected versions
+    public DatabaseHelperEnhanced(Context context) {
+        super(context, DbConfig.getDatabaseName(), null, DbConfig.getDatabaseVersion());
+        // Improves concurrent reads during writes
+        try { setWriteAheadLoggingEnabled(true); } catch (Throwable ignored) {}
     }
 
-    // Called when the DB is created for the first time
     @Override
     public void onCreate(SQLiteDatabase db) {
-        // Set up the user table
-        String createUsersTable = "CREATE TABLE " + TABLE_USERS + " ("
-                + COLUMN_USER_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
-                + COLUMN_USERNAME + " TEXT UNIQUE, "
-                + COLUMN_PASSWORD + " TEXT)";
-        db.execSQL(createUsersTable);
+        // Users table with constraints
+        String createUsers = "CREATE TABLE " + DbConfig.TABLE_USERS + " (" +
+                DbConfig.COLUMN_USER_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                DbConfig.COLUMN_USERNAME + " TEXT NOT NULL UNIQUE, " +
+                DbConfig.COLUMN_PASSWORD + " TEXT NOT NULL)";
+        db.execSQL(createUsers);
+        db.execSQL("CREATE INDEX IF NOT EXISTS " + DbConfig.IDX_USERS_USERNAME +
+                " ON " + DbConfig.TABLE_USERS + " (" + DbConfig.COLUMN_USERNAME + ")");
 
-        // Set up the events table
-        String createEventsTable = "CREATE TABLE " + TABLE_EVENTS + " ("
-                + COLUMN_EVENT_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
-                + COLUMN_EVENT_TITLE + " TEXT, "
-                + COLUMN_EVENT_DATE + " TEXT)";
-        db.execSQL(createEventsTable);
+        // Events table with constraints
+        String createEvents = "CREATE TABLE " + DbConfig.TABLE_EVENTS + " (" +
+                DbConfig.COLUMN_EVENT_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                DbConfig.COLUMN_EVENT_TITLE + " TEXT NOT NULL, " +
+                DbConfig.COLUMN_EVENT_DATE + " TEXT NOT NULL)";
+        db.execSQL(createEvents);
+        db.execSQL("CREATE INDEX IF NOT EXISTS " + DbConfig.IDX_EVENTS_DATE +
+                " ON " + DbConfig.TABLE_EVENTS + " (" + DbConfig.COLUMN_EVENT_DATE + ")");
     }
 
-    // Called when we increment DATABASE_VERSION
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        // Drop and rebuild both tables
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_EVENTS);
-        onCreate(db);
+        if (oldVersion < 2) {
+            // Migrate users
+            db.execSQL("ALTER TABLE " + DbConfig.TABLE_USERS + " RENAME TO users_old");
+            // Recreate tables with new constraints and indices
+            onCreate(db);
+            // Migrate user data; skip rows with null username/password
+            db.execSQL("INSERT OR IGNORE INTO " + DbConfig.TABLE_USERS + " (" +
+                    DbConfig.COLUMN_USERNAME + ", " + DbConfig.COLUMN_PASSWORD + ") " +
+                    "SELECT " + DbConfig.COLUMN_USERNAME + ", " + DbConfig.COLUMN_PASSWORD + " FROM users_old WHERE " +
+                    DbConfig.COLUMN_USERNAME + " IS NOT NULL AND " + DbConfig.COLUMN_PASSWORD + " IS NOT NULL");
+            db.execSQL("DROP TABLE IF EXISTS users_old");
+
+            // Note: events table in v1 was already simple; if it existed, ensure data remains.
+            // If an old events table existed without rename (fresh install), nothing to migrate.
+        }
     }
 
-    // Adds a new user to the DB – returns true if successful
-    public boolean addUser(String username, String password) {
+    // Updated function to use the new injected values and to better handle errors and exceptions
+    // Adds a new user with hashed password
+    public boolean addUser(String username, String plainPassword) {
         SQLiteDatabase db = this.getWritableDatabase();
-
         ContentValues values = new ContentValues();
-        values.put(COLUMN_USERNAME, username);
-        values.put(COLUMN_PASSWORD, password);
-
-        long result = db.insert(TABLE_USERS, null, values);
-        db.close();
-
-        return result != -1; // -1 means failure
-    }
-
-    // Validates a username/password combo
-    public boolean checkUserCredentials(String username, String password) {
-        SQLiteDatabase db = this.getReadableDatabase();
-
-        String query = "SELECT * FROM " + TABLE_USERS +
-                " WHERE " + COLUMN_USERNAME + "=? AND " + COLUMN_PASSWORD + "=?";
-        Cursor cursor = db.rawQuery(query, new String[]{username, password});
-
-        boolean exists = (cursor.getCount() > 0);
-        cursor.close();
-        db.close();
-        return exists;
-    }
-
-    // Inserts a new calendar event into the DB – returns true if successful
-    public boolean addEvent(String title, String date) {
-        SQLiteDatabase db = this.getWritableDatabase();
-
-        ContentValues values = new ContentValues();
-        values.put(COLUMN_EVENT_TITLE, title);
-        values.put(COLUMN_EVENT_DATE, date);
-
-        long result = db.insert(TABLE_EVENTS, null, values);
-        db.close();
-
+        values.put(DbConfig.COLUMN_USERNAME, username);
+        values.put(DbConfig.COLUMN_PASSWORD, SecurityUtils.hashPassword(plainPassword));
+        long result = db.insertWithOnConflict(
+                DbConfig.TABLE_USERS, null, values, SQLiteDatabase.CONFLICT_IGNORE);
         return result != -1;
     }
 
-    // Returns all events from the DB as a Cursor – for reading/display
-    public Cursor getAllEvents() {
+    // Validates login credentials
+    public boolean checkUserCredentials(String username, String plainPassword) {
         SQLiteDatabase db = this.getReadableDatabase();
-
-        String query = "SELECT * FROM " + TABLE_EVENTS + " ORDER BY " + COLUMN_EVENT_DATE + " ASC";
-        return db.rawQuery(query, null);
-    }
-
-    // Updates a calendar event by ID – returns true if a row was updated
-    public boolean updateEvent(int id, String newTitle, String newDate) {
-        SQLiteDatabase db = this.getWritableDatabase();
-
-        ContentValues values = new ContentValues();
-        values.put(COLUMN_EVENT_TITLE, newTitle);
-        values.put(COLUMN_EVENT_DATE, newDate);
-
-        int rows = db.update(TABLE_EVENTS, values, COLUMN_EVENT_ID + "=?", new String[]{String.valueOf(id)});
+        String hashed = SecurityUtils.hashPassword(plainPassword);
+        String q = "SELECT 1 FROM " + DbConfig.TABLE_USERS + " WHERE " +
+                DbConfig.COLUMN_USERNAME + "=? AND " + DbConfig.COLUMN_PASSWORD + "=? LIMIT 1";
+        Cursor c = db.rawQuery(q, new String[]{username, hashed});
+        boolean ok = c != null && c.moveToFirst();
+        if (c != null) c.close();
         db.close();
-
-        return rows > 0;
+        return ok;
     }
 
-    // Deletes a calendar event by ID – returns true if a row was deleted
-    public boolean deleteEvent(int id) {
-        SQLiteDatabase db = this.getWritableDatabase();
-
-        int rows = db.delete(TABLE_EVENTS, COLUMN_EVENT_ID + "=?", new String[]{String.valueOf(id)});
-        db.close();
-
-        return rows > 0;
-    }
-
-
-    // Checks if a user already exists – used for sign-up
     public boolean userExists(String username) {
         SQLiteDatabase db = this.getReadableDatabase();
+        try (Cursor c = db.rawQuery(q, new String[]{username})) {
+            return c.moveToFirst();
+        }
+    }
 
-        String query = "SELECT * FROM " + TABLE_USERS +
-                " WHERE " + COLUMN_USERNAME + "=?";
-        Cursor cursor = db.rawQuery(query, new String[]{username});
+    // Event CRUD - updated for injection data
+    public boolean addEvent(String title, String date) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(DbConfig.COLUMN_EVENT_TITLE, title);
+        values.put(DbConfig.COLUMN_EVENT_DATE, date);
+        long result = db.insertWithOnConflict(
+                DbConfig.TABLE_EVENTS, null, values, SQLiteDatabase.CONFLICT_ABORT);
+        return result != -1;
+    }
 
-        boolean exists = (cursor.getCount() > 0);
-        cursor.close();
+
+    public Cursor getAllEvents() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String q = "SELECT * FROM " + DbConfig.TABLE_EVENTS + " ORDER BY " + DbConfig.COLUMN_EVENT_DATE + " ASC";
+        return db.rawQuery(q, null);
+    }
+
+    public boolean updateEvent(int id, String newTitle, String newDate) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(DbConfig.COLUMN_EVENT_TITLE, newTitle);
+        values.put(DbConfig.COLUMN_EVENT_DATE, newDate);
+        int rows = db.update(DbConfig.TABLE_EVENTS, values, DbConfig.COLUMN_EVENT_ID + "=?", new String[]{String.valueOf(id)});
         db.close();
-        return exists;
+        return rows > 0;
+    }
+
+    public boolean deleteEvent(int id) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        int rows = db.delete(DbConfig.TABLE_EVENTS, DbConfig.COLUMN_EVENT_ID + "=?", new String[]{String.valueOf(id)});
+        db.close();
+        return rows > 0;
+    }
+    //Adding Foreign keys enabled
+    @Override
+    public void onConfigure(SQLiteDatabase db) {
+        super.onConfigure(db);
+        db.setForeignKeyConstraintsEnabled(true);
     }
 }

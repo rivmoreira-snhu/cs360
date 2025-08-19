@@ -9,15 +9,17 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-
 import androidx.appcompat.app.AppCompatActivity;
 
-public class CalendarActivity extends AppCompatActivity {
-
+/**
+ * CalendarActivity shows and manages events.
+ * Enhancements include proper DB deletion, UI feedback for empty state,
+ * and preparation for RecyclerView refactor.
+ */
+public class CalendarActivityEnhanced extends AppCompatActivity {
     private LinearLayout eventList;
-    private Button addEventButton;
     private DatabaseHelper dbHelper;
-
+    private String currentDate;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,48 +27,46 @@ public class CalendarActivity extends AppCompatActivity {
         setContentView(R.layout.activity_calendar);
 
         eventList = findViewById(R.id.eventList);
-        addEventButton = findViewById(R.id.addEventButton);
+        Button addEventButton = findViewById(R.id.addEventButton);
         TextView currentDateView = findViewById(R.id.currentDate);
         dbHelper = new DatabaseHelper(this);
 
-        // Format the date to something friendly
-        String currentDate = java.text.DateFormat.getDateInstance().format(new java.util.Date());
+        currentDate = java.text.DateFormat.getDateInstance().format(new java.util.Date());
         currentDateView.setText(currentDate);
 
-        // Load events from database
         loadEventsFromDatabase();
 
-        // Add new dummy event to DB and refresh
         addEventButton.setOnClickListener(view -> {
             boolean success = dbHelper.addEvent("New Event", currentDate);
             if (success) {
-                loadEventsFromDatabase(); // refresh the UI list
+                loadEventsFromDatabase();
                 Toast.makeText(this, "Event added", Toast.LENGTH_SHORT).show();
             } else {
                 Toast.makeText(this, "Error adding event", Toast.LENGTH_SHORT).show();
             }
         });
     }
-    // Pulls all events from the DB and renders them
+
     private void loadEventsFromDatabase() {
-        eventList.removeAllViews(); // clear list before refreshing
+        eventList.removeAllViews();
         Cursor cursor = dbHelper.getAllEvents();
 
         if (cursor != null && cursor.moveToFirst()) {
             do {
-                String title = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_EVENT_TITLE));
-                String date = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_EVENT_DATE));
-                String location = "TBD"; // location can be static for now
-
-                inflateEventItem(title, date, location);
+                int id = cursor.getInt(cursor.getColumnIndexOrThrow(DbConfig.COLUMN_EVENT_ID));
+                String title = cursor.getString(cursor.getColumnIndexOrThrow(DbConfig.COLUMN_EVENT_TITLE));
+                String date = cursor.getString(cursor.getColumnIndexOrThrow(DbConfig.COLUMN_EVENT_DATE));
+                inflateEventItem(id, title, date, "TBD");
             } while (cursor.moveToNext());
-
             cursor.close();
+        } else {
+            TextView emptyState = new TextView(this);
+            emptyState.setText("No events available. Tap '+' to add one.");
+            eventList.addView(emptyState);
         }
     }
 
-    // Builds a single event UI row and adds to eventList
-    private void inflateEventItem(String title, String time, String location) {
+    private void inflateEventItem(int eventId, String title, String time, String location) {
         LayoutInflater inflater = LayoutInflater.from(this);
         View eventItem = inflater.inflate(R.layout.event_item, eventList, false);
 
@@ -79,10 +79,16 @@ public class CalendarActivity extends AppCompatActivity {
         timeView.setText(time);
         locationView.setText(location);
 
-        // Delete button just removes the view (not from DB...yet)
-        deleteButton.setOnClickListener(v -> eventList.removeView(eventItem));
+        deleteButton.setOnClickListener(v -> {
+            boolean deleted = dbHelper.deleteEvent(eventId);
+            if (deleted) {
+                Toast.makeText(this, "Event deleted", Toast.LENGTH_SHORT).show();
+                loadEventsFromDatabase();
+            } else {
+                Toast.makeText(this, "Error deleting event", Toast.LENGTH_SHORT).show();
+            }
+        });
 
         eventList.addView(eventItem);
     }
-
 }

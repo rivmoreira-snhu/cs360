@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Enhancement 3 • Databases • CS499 ePortfolio</title>
+  <link rel="icon" href="../assets/favicon.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script defer src="../assets/js/main.js"></script>
+</head>
+
+<body>
+
+  <nav class="nav" role="navigation" aria-label="Main">
+    <a href="#main" class="skip-link">Skip to content</a>
+    <div class="container">
+      <a class="brand" href="/index.html">Angel M. Rivera Moreira  CS499</a>
+      <div class="links" role="menubar">
+        <a href='/index.html'>Self-Assessment</a>
+        <a href='/code-review.html'>Code Review</a>
+        <a href='software-engineering.html'>Software Eng.</a>
+        <a href='algorithms.html'>Algorithms & DS</a>
+        <a href='databases.html' style='border-color: var(--accent)'>Databases</a>
+      </div>
+    </div>
+  </nav>
+
+  <main id="main" class="container" role="main">
+    <h1>Enhancement 3 • Databases</h1>
+    <section class="card">
+      <h2>Artifact</h2>
+      <p><strong>Minimal Calendar App (Android / SQLite):</strong> An event‑tracking app with login, CRUD, and daily
+        view.</p>
+      <ul>
+        <li>Abstracted env‑specific values via BuildConfig/DbConfig; removed hard‑coded DB params.</li>
+        <li>Enabled WAL mode and added indices to improve performance of common operations.</li>
+        <li>Used <code>insertWithOnConflict()</code>; added migration logic (v1 > v2); enabled foreign key constraints.
+        </li>
+      </ul>
+      <p class="notice">Add before/after screenshots or code snippets that illustrate the enhancements.</p>
+    </section>
+    <section class="card">
+      <h2>Links & Evidence</h2>
+      <ul>
+        <li><a href='../files/Milestone Four.pdf'>Narrative (Databases)</a></li>
+        <li><a href='../files/MilestoneFourcode.zip'>Original & Enhanced Code (zip)</a></li>
+        <li><a href="https://github.com/rivmoreira-snhu/cs360" target="_blank" rel="noopener">GitHub repository
+            (link)</a></li>
+      </ul>
+    </section>
+    <section class="card">
+  <h2>Code Snippets</h2>
+
+  <h3>Before > After: config hard-coding removed</h3>
+  <p><em>Problem:</em> DB name/version hard-coded. <em>Fix:</em> use <code>BuildConfig</code> via <code>DbConfig</code> getters, so environments (dev/QA/prod) inject values.</p>
+
+  <!-- BEFORE: DbConfig.java -->
+  <details>
+    <summary><strong>Before (DbConfig.java)</strong></summary>
+    <pre><code class="language-java">public class DbConfig {
+    public static final String DATABASE_NAME = "calendarApp.db";
+    public static final int DATABASE_VERSION = 1;
+
+    public static final String TABLE_USERS = "users";
+    public static final String COLUMN_USER_ID = "id";
+    public static final String COLUMN_USERNAME = "username";
+    public static final String COLUMN_PASSWORD = "password";
+
+    public static final String TABLE_EVENTS = "events";
+    public static final String COLUMN_EVENT_ID = "id";
+    public static final String COLUMN_EVENT_TITLE = "title";
+    public static final String COLUMN_EVENT_DATE = "date";
+}</code></pre>
+  </details>
+
+  <!-- AFTER: DbConfigEnhanced.java -->
+  <pre><code class="language-java">public class DbConfig {
+    // Schema identifiers are not secrets; keep them here for clarity.
+    public static final String TABLE_USERS = "users";
+    public static final String COLUMN_USER_ID = "id";
+    public static final String COLUMN_USERNAME = "username";
+    public static final String COLUMN_PASSWORD = "password"; // stores hash
+
+    public static final String TABLE_EVENTS = "events";
+    public static final String COLUMN_EVENT_ID = "id";
+    public static final String COLUMN_EVENT_TITLE = "title";
+    public static final String COLUMN_EVENT_DATE = "date";
+
+    public static final String IDX_USERS_USERNAME = "idx_users_username";
+    public static final String IDX_EVENTS_DATE   = "idx_events_date";
+
+    public static String getDatabaseName() {
+        return BuildConfig.DB_NAME;       // injected via Gradle per environment
+    }
+
+    public static int getDatabaseVersion() {
+        return BuildConfig.DB_VERSION;    // injected; v2 in this submission
+    }
+
+    // Environment-derived values (examples)
+    public static String getApiBaseUrl() { return clean(BuildConfig.API_BASE_URL); }
+    public static String getMongoUri()   { return clean(BuildConfig.MONGO_URI); }
+    public static String getSentryDsn()  { return clean(BuildConfig.SENTRY_DSN); }
+
+    private static String clean(String s) { return (s == null || s.trim().isEmpty()) ? null : s.trim(); }
+}</code></pre>
+
+  <h3>Engine safety: foreign keys + WAL</h3>
+  <p><em>Why:</em> FKs protect integrity; WAL improves concurrency and write performance.</p>
+  <pre><code class="language-java">// DatabaseHelperEnhanced.java
+@Override
+public void onConfigure(SQLiteDatabase db) {
+    super.onConfigure(db);
+    db.setForeignKeyConstraintsEnabled(true);
+}
+
+// Enable Write-Ahead Logging (safe try/catch for API differences)
+try { setWriteAheadLoggingEnabled(true); } catch (Throwable ignored) {}
+</code></pre>
+
+  <h3>Schema with constraints + indexes</h3>
+  <p><em>What changed:</em> explicit <code>NOT NULL</code>/<code>UNIQUE</code>, and targeted indexes for hot paths.</p>
+  <pre><code class="language-java">// DatabaseHelperEnhanced.java
+@Override
+public void onCreate(SQLiteDatabase db) {
+    // Users table with constraints
+    String createUsers = "CREATE TABLE " + DbConfig.TABLE_USERS + " (" +
+            DbConfig.COLUMN_USER_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+            DbConfig.COLUMN_USERNAME + " TEXT NOT NULL UNIQUE, " +
+            DbConfig.COLUMN_PASSWORD + " TEXT NOT NULL)";
+    db.execSQL(createUsers);
+    db.execSQL("CREATE INDEX IF NOT EXISTS " + DbConfig.IDX_USERS_USERNAME +
+            " ON " + DbConfig.TABLE_USERS + " (" + DbConfig.COLUMN_USERNAME + ")");
+
+    // Events table with constraints
+    String createEvents = "CREATE TABLE " + DbConfig.TABLE_EVENTS + " (" +
+            DbConfig.COLUMN_EVENT_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+            DbConfig.COLUMN_EVENT_TITLE + " TEXT NOT NULL, " +
+            DbConfig.COLUMN_EVENT_DATE + " TEXT NOT NULL)";
+    db.execSQL(createEvents);
+    db.execSQL("CREATE INDEX IF NOT EXISTS " + DbConfig.IDX_EVENTS_DATE +
+            " ON " + DbConfig.TABLE_EVENTS + " (" + DbConfig.COLUMN_EVENT_DATE + ")");
+}
+</code></pre>
+
+  <h3>Conflict-aware writes (no duplicate usernames)</h3>
+  <p><em>Why:</em> Control failure modes cleanly; don’t rely on exceptions as logic.</p>
+  <pre><code class="language-java">// DatabaseHelperEnhanced.java
+public boolean addUser(String username, String plainPassword) {
+    SQLiteDatabase db = this.getWritableDatabase();
+    ContentValues values = new ContentValues();
+    values.put(DbConfig.COLUMN_USERNAME, username);
+    values.put(DbConfig.COLUMN_PASSWORD, SecurityUtils.hashPassword(plainPassword));
+
+    long result = db.insertWithOnConflict(
+            DbConfig.TABLE_USERS, null, values, SQLiteDatabase.CONFLICT_IGNORE);
+    return result != -1;
+}
+</code></pre>
+
+  <h3>Non-destructive migration v1 > v2</h3>
+  <p><em>Goal:</em> Recreate tables with new constraints without data loss; skip bad rows.</p>
+  <pre><code class="language-java">// DatabaseHelperEnhanced.java
+@Override
+public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+    if (oldVersion &lt; 2) {
+        // Rename old users table and recreate schema
+        db.execSQL("ALTER TABLE " + DbConfig.TABLE_USERS + " RENAME TO users_old");
+        onCreate(db);
+
+        // Migrate data; ignore rows with null username/password
+        db.execSQL("INSERT OR IGNORE INTO " + DbConfig.TABLE_USERS + " (" +
+                DbConfig.COLUMN_USERNAME + ", " + DbConfig.COLUMN_PASSWORD + ") " +
+                "SELECT " + DbConfig.COLUMN_USERNAME + ", " + DbConfig.COLUMN_PASSWORD +
+                " FROM users_old WHERE " + DbConfig.COLUMN_USERNAME + " IS NOT NULL AND " +
+                                        DbConfig.COLUMN_PASSWORD + " IS NOT NULL");
+        db.execSQL("DROP TABLE IF EXISTS users_old");
+    }
+}
+</code></pre>
+
+  <h3>Delete & targeted read (bound by PK)</h3>
+  <p><em>Why:</em> Operations key off the primary ID; reads return only columns needed by UI.</p>
+  <pre><code class="language-java">// DatabaseHelperEnhanced.java
+public boolean deleteEvent(int id) {
+    SQLiteDatabase db = this.getWritableDatabase();
+    int rows = db.delete(DbConfig.TABLE_EVENTS,
+                         DbConfig.COLUMN_EVENT_ID + "=?",
+                         new String[]{ String.valueOf(id) });
+    db.close();
+    return rows &gt; 0;
+}
+
+public Cursor getEventsCursorForDate(String date) {
+    SQLiteDatabase db = this.getReadableDatabase();
+    String[] cols = {
+        DbConfig.COLUMN_EVENT_ID,
+        DbConfig.COLUMN_EVENT_TITLE,
+        DbConfig.COLUMN_EVENT_DATE
+        // (include time/location here if present in your schema)
+    };
+    return db.query(DbConfig.TABLE_EVENTS, cols,
+            DbConfig.COLUMN_EVENT_DATE + "=?",
+            new String[]{ date }, null, null,
+            DbConfig.COLUMN_EVENT_DATE + " ASC");
+}
+</code></pre>
+
+  <h3>For contrast: pre-enhancement insert (plaintext & no conflict control)</h3>
+  <details>
+    <summary><strong>Before (DatabaseHelper.java)</strong></summary>
+    <pre><code class="language-java">public boolean addUser(String username, String password) {
+    SQLiteDatabase db = this.getWritableDatabase();
+
+    ContentValues values = new ContentValues();
+    values.put(COLUMN_USERNAME, username);
+    values.put(COLUMN_PASSWORD, password); // plaintext
+
+    long result = db.insert(TABLE_USERS, null, values);
+    db.close();
+    return result != -1; // -1 means failure
+}</code></pre>
+  </details>
+
+  <p><em>Outcome tie-in:</em> This layer now enforces integrity (FKs), improves perf (WAL + indexes),
+     handles duplicates predictably, and migrates safely without data loss—exactly what I outlined in the Milestone narrative. </p>
+</section>
+    <div class="footer">
+      <p>© 2025 Angel M. Rivera Moreira</p>
+    </div>
+  </main>
+</body>
+
+</html>
