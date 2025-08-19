@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Code Review Video • CS499 ePortfolio</title>
+  <link rel="icon" href="assets/favicon.png">
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <script defer src="assets/js/main.js"></script>
+</head>
+
+<body>
+
+  <nav class="nav" role="navigation" aria-label="Main">
+    <a href="#main" class="skip-link">Skip to content</a>
+    <div class="container">
+      <a class="brand" href="/index.html">Angel M. Rivera Moreira  CS499</a>
+      <div class="links" role="menubar">
+        <a href='/index.html'>Self-Assessment</a>
+        <a href='/code-review.html'>Code Review</a>
+        <a href='artifacts/software-engineering.html'>Software Eng.</a>
+        <a href='artifacts/algorithms.html'>Algorithms & DS</a>
+        <a href='artifacts/databases.html'>Databases</a>
+      </div>
+    </div>
+  </nav>
+
+  <main id="main" class="container" role="main">
+    <h1>Informal Code Review</h1>
+    <div class="card">
+      <h2>Video</h2>
+      <p>This recording walks through the code of the Minimal Calendar mobile app for CS360, risks, and the three
+        enhancement tracks. Captions recommended for accessibility.</p>
+
+      <div
+        style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border:1px solid var(--border);border-radius:12px;">
+        <iframe src="https://www.youtube.com/embed/XvJSCsGjEH8?rel=0" title="CS499 Informal Code Review"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen loading="lazy" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;">
+        </iframe>
+      </div>
+
+      <p style="margin-top:.75rem;">If the embed doesn’t load, <a href="https://youtu.be/XvJSCsGjEH8" target="_blank"
+          rel="noopener">open the video in a new tab</a>.</p>
+    </div>
+    <section class="card">
+      <h2>Scope of What the video covers</h2>
+      <ul>
+        <li><strong>Existing functionality:</strong> Login/auth path, daily event grid, CRUD ops, local SQLite store,
+          current UI flow.</li>
+        <li><strong>Observed risks:</strong> Mixed responsibilities, weak/duplicate validation, plaintext credential
+          path, hard-coded config, limited testability.</li>
+        <li><strong>Planned enhancements:</strong> Refactors for maintainability/testability, DS/algorithm
+          clarifications (date-keyed grouping), and DB integrity/performance work (WAL, indices, migrations,
+          conflict-aware writes).</li>
+      </ul>
+    </section>
+    <div class="footer">
+      <p>© 2025 Angel M. Rivera Moreira</p>
+    </div>
+  </main>
+</body>
+
+</html>

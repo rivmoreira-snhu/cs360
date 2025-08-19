@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Enhancement 1 • Software Engineering & Design • CS499 ePortfolio</title>
+  <link rel="icon" href="../assets/favicon.png">
+  <link rel="stylesheet" href="../assets/css/styles.css">
+  <script defer src="../assets/js/main.js"></script>
+</head>
+
+<body>
+
+  <nav class="nav" role="navigation" aria-label="Main">
+    <a href="#main" class="skip-link">Skip to content</a>
+    <div class="container">
+      <a class="brand" href="/index.html">Angel M. Rivera Moreira CS499</a>
+      <div class="links" role="menubar">
+        <a href='/index.html'>Self-Assessment</a>
+        <a href='/code-review.html'>Code Review</a>
+        <a href='software-engineering.html'>Software Eng.</a>
+        <a href='algorithms.html'>Algorithms & DS</a>
+        <a href='databases.html' style='border-color: var(--accent)'>Databases</a>
+      </div>
+    </div>
+  </nav>
+
+  <main id="main" class="container" role="main">
+    <h1>Enhancement 1 • Software Engineering & Design</h1>
+    <section class="card">
+      <h2>Artifact</h2>
+      <p><strong>Minimal Calendar App (Android / SQLite):</strong> An event‑tracking app with login, CRUD, and daily
+        view.</p>
+      <ul>
+        <li>Refactored shared logic for maintainability; centralized schema constants (DbConfig).</li>
+        <li>Implemented input validation and user feedback; improved error handling.</li>
+        <li>Replaced plaintext passwords with SHA‑256 hashing (SecurityUtils).</li>
+        <li>Scoped RecyclerView plan for scalable rendering and modular UI.</li>
+      </ul>
+      <p class="notice">Add before/after screenshots or code snippets that illustrate the enhancements.</p>
+    </section>
+    <section class="card">
+      <h2>Links & Evidence</h2>
+      <ul>
+        <li><a href='../files/Milestone Two.pdf'>Narrative (Software Engineering)</a></li>
+        <li><a href='../files/MilestoneTwocode.zip'>Original & Enhanced Code (zip)</a></li>
+        <li><a href="https://github.com/rivmoreira-snhu/cs360" target="_blank" rel="noopener">GitHub repository
+            (link)</a></li>
+      </ul>
+    </section>
+    <section class="card">
+      <h2>Code Snippets</h2>
+
+      <h3>Before - plaintext password & mixed concerns</h3>
+      <pre><code class="language-java">public boolean addUser(String username, String password) {
+          SQLiteDatabase db = this.getWritableDatabase();
+
+          ContentValues values = new ContentValues();
+          values.put(COLUMN_USERNAME, username);
+          values.put(COLUMN_PASSWORD, password); // plaintext
+
+          long result = db.insert(TABLE_USERS, null, values);
+          db.close();
+          return result != -1;
+      }</code></pre>
+
+            <h3>After - hashed credentials & parameterized checks</h3>
+            <pre><code class="language-java">public boolean addUser(String username, String password) {
+          SQLiteDatabase db = this.getWritableDatabase();
+
+          ContentValues values = new ContentValues();
+          values.put(DbConfig.COLUMN_USERNAME, username);
+          values.put(DbConfig.COLUMN_PASSWORD, SecurityUtils.hashPassword(password));
+
+          long result = db.insert(DbConfig.TABLE_USERS, null, values);
+          db.close();
+          return result != -1;
+      }
+
+      public boolean checkUserCredentials(String username, String password) {
+          SQLiteDatabase db = this.getReadableDatabase();
+
+          String hashedPassword = SecurityUtils.hashPassword(password);
+          String query = "SELECT * FROM " + DbConfig.TABLE_USERS +
+                  " WHERE " + DbConfig.COLUMN_USERNAME + "=? AND " +
+                              DbConfig.COLUMN_PASSWORD + "=?";
+          Cursor cursor = db.rawQuery(query, new String[]{username, hashedPassword});
+
+          boolean exists = (cursor.getCount() > 0);
+          cursor.close();
+          db.close();
+          return exists;
+      }</code></pre>
+
+      <h3>UI Hardening — input validation (login & signup)</h3>
+      <pre><code class="language-java">private void validateInputs(EditText usernameInput, EditText passwordInput,
+                            Button loginButton, Button signupButton) {
+    String username = usernameInput.getText().toString().trim();
+    String password = passwordInput.getText().toString().trim();
+
+    boolean enable = !username.isEmpty() && !password.isEmpty() && password.length() >= 6;
+    loginButton.setEnabled(enable);
+    signupButton.setEnabled(enable);
+}</code></pre>
+
+      <p><em>Why it matters:</em> SRP-friendly refactors, safer auth path (hashing + params), and guardrails at the UI
+        make the codebase easier to extend and test. See narrative for alignment to outcomes.</p>
+    </section>
+    <section class="card">
+      <h2>Reflection & Outcomes</h2>
+      <ul>
+        <li>What changed and why it matters (trade‑offs, constraints, risks)</li>
+        <li>Testing & validation performed; results</li>
+        <li>Course outcomes addressed</li>
+      </ul>
+    </section>
+    <div class="footer">
+      <p>© 2025 Angel M. Rivera Moreira</p>
+    </div>
+  </main>
+</body>
+
+</html>

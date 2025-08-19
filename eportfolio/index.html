@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Professional Self‑Assessment • CS499 ePortfolio</title>
+  <link rel="icon" href="assets/favicon.png">
+  <link rel="stylesheet" href="assets/css/styles.css">
+  <script defer src="assets/js/main.js"></script>
+</head>
+
+<body>
+
+  <nav class="nav" role="navigation" aria-label="Main">
+    <a href="#main" class="skip-link">Skip to content</a>
+    <div class="container">
+      <a class="brand" href="/index.html">Angel M. Rivera Moreira  CS499</a>
+      <div class="links" role="menubar">
+        <a href='index.html' style='border-color: var(--accent)'>Self-Assessment</a>
+        <a href='code-review.html'>Code Review</a>
+        <a href='artifacts/software-engineering.html'>Software Eng.</a>
+        <a href='artifacts/algorithms.html'>Algorithms & DS</a>
+        <a href='artifacts/databases.html'>Databases</a>
+      </div>
+    </div>
+  </nav>
+
+  <main id="main" class="container" role="main">
+    <h1>Professional Self‑Assessment</h1>
+    <div class="notice">
+      <p><strong>Instructions:</strong> I build real-time, cloud-native personalization systems that translate business
+        objectives into measurable outcomes. My career has gone from cryptography technician in the U.S. Navy to
+        software developer, senior/manager solution architect and it has been defined by designing distributed systems,
+        operationalizing applied AI/ML, and leading cross-functional teams to ship capabilities that actually move KPIs
+        (conversion, AHT, NPS). In parallel, completing the B.S. in Computer Science cemented fundamentals in
+        algorithms, data structures, operating systems, testing, and graphics, giving me the theory to match my
+        production experience. Together, this ePortfolio’s artifacts show end-to-end ownership: requirements > design >
+        implementation > testing > data > security > delivery.</p>
+    </div>
+    <section class="card">
+      <h2>Overview</h2>
+      <p>I design and ship maintainable systems that drive measurable outcomes. Professionally, I’ve led solution
+        architecture for real-time, cloud-native personalization. ranslating stakeholder goals into deployableT
+        capabilities and validated KPI lift. Academically, completing the B.S. in Computer Science (Aug 2025) solidified
+        fundamentals in algorithms, data structures, databases, testing, operating systems, and graphics. This
+        ePortfolio integrates both: it shows clear before/after improvements, defensible trade-offs, and a
+        security-first posture.</p>
+    </section>
+    <article class="card">
+      <h3>Collaboration & Communication</h3>
+      <ul>
+        <li>I run tight feedback loops. On the job, that means structured code reviews with checklists, design docs
+          with explicit trade-offs, and demo-driven increments so stakeholders can see value early. In academic
+          projects, it meant writing to rubric and audience, not ego, clear commit messages, and narratives that
+          explain why changes exist. I’m comfortable presenting technical content to non-technical leaders (e.g.,
+          linking experiment results to financial impact) and translating stakeholder asks into backlog items with
+          acceptance criteria. The code review video in this portfolio mirrors how I do it at work: walk the existing
+          system, highlight risks, propose changes with rationale, and tie each to outcomes.</li>
+      </ul>
+    </article>
+    <article class="card">
+      <h3>Security Mindset</h3>
+      <ul>
+        <li>I eliminated plaintext credential handling by introducing non-reversible hashing for passwords, wrapped
+          all DB access in parameterized queries, and validated every user input at the edge. I also checked failure
+          paths: errors disclose nothing sensitive, and logs carry enough context to debug without leaking PII. The
+          goal is simple: make unsafe states hard to represent and insecure behavior hard to write.</li>
+      </ul>
+    </article>
+    <section class="card">
+      <h2>How the Artifacts Fit Together</h2>
+      <p>
+        All enhancements build on a single Android “Minimal Calendar / Event-Tracking” application to show cohesive
+        evolution, not isolated fixes.
+      </p>
+      <ul>
+        <li><strong>Software Engineering & Design:</strong> Refactored for readability and testability
+          (single-responsibility utilities, centralized schema/constants), added input validation and error handling,
+          and replaced plaintext credentials with non-reversible hashing. Result: fewer code paths, clearer contracts,
+          easier extension (e.g., RecyclerView) without touching data logic.</li>
+        <li><strong>Algorithms & Data Structures:</strong> Introduced deterministic date-keyed grouping
+          (<code>Map&lt;String, List&lt;Event&gt;&gt;</code>) for rendering, clarified control flow, and hardened edge
+          cases. Result: predictable performance, simpler reasoning about complexity, and a clean path to scalable UI
+          components.</li>
+        <li><strong>Databases:</strong> Treated local storage like a real DB: WAL enabled, targeted indices,
+          conflict-aware writes (<code>insertWithOnConflict</code>), foreign keys on, and versioned migrations (v1 > v2).
+          Result: integrity by default, faster hot paths, and safe schema evolution.</li>
+      </ul>
+      <p>The code review serves as an introduction for the original code and understanding how the project is laid out
+        while pointing out possible improvements. Each artifact page links to the narrative (PDF), original/enhanced
+        code (ZIP),
+        and before/after evidence so reviewers can verify claims quickly.</p>
+    </section>
+    <div class="footer">
+      <p>© 2025 Angel M. Rivera Moreira</p>
+    </div>
+  </main>
+</body>
+
+</html>
